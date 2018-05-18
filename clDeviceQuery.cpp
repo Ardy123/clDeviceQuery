@@ -44,22 +44,22 @@ void clPrintDevInfo(cl_device_id device) {
   // CL_DEVICE_MAX_COMPUTE_UNITS
   cl_uint compute_units;
   clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(compute_units), &compute_units, NULL);
-  printf("  CL_DEVICE_MAX_COMPUTE_UNITS:\t\t%u\n", compute_units);
+  printf("  CL_DEVICE_MAX_COMPUTE_UNITS:\t\t%ul\n", compute_units);
 
   // CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS
   size_t workitem_dims;
   clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(workitem_dims), &workitem_dims, NULL);
-  printf("  CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS:\t%u\n", workitem_dims);
+  printf("  CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS:\t%lu\n", workitem_dims);
 
   // CL_DEVICE_MAX_WORK_ITEM_SIZES
   size_t workitem_size[3];
   clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(workitem_size), &workitem_size, NULL);
-  printf("  CL_DEVICE_MAX_WORK_ITEM_SIZES:\t%u / %u / %u \n", workitem_size[0], workitem_size[1], workitem_size[2]);
+  printf("  CL_DEVICE_MAX_WORK_ITEM_SIZES:\t%lu / %lu / %lu \n", workitem_size[0], workitem_size[1], workitem_size[2]);
 
   // CL_DEVICE_MAX_WORK_GROUP_SIZE
   size_t workgroup_size;
   clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(workgroup_size), &workgroup_size, NULL);
-  printf("  CL_DEVICE_MAX_WORK_GROUP_SIZE:\t%u\n", workgroup_size);
+  printf("  CL_DEVICE_MAX_WORK_GROUP_SIZE:\t%lu\n", workgroup_size);
 
   // CL_DEVICE_MAX_CLOCK_FREQUENCY
   cl_uint clock_frequency;
@@ -126,15 +126,15 @@ void clPrintDevInfo(cl_device_id device) {
   size_t szMaxDims[5];
   printf("\n  CL_DEVICE_IMAGE <dim>");
   clGetDeviceInfo(device, CL_DEVICE_IMAGE2D_MAX_WIDTH, sizeof(size_t), &szMaxDims[0], NULL);
-  printf("\t\t\t2D_MAX_WIDTH\t %u\n", szMaxDims[0]);
+  printf("\t\t\t2D_MAX_WIDTH\t %lu\n", szMaxDims[0]);
   clGetDeviceInfo(device, CL_DEVICE_IMAGE2D_MAX_HEIGHT, sizeof(size_t), &szMaxDims[1], NULL);
-  printf("\t\t\t\t\t2D_MAX_HEIGHT\t %u\n", szMaxDims[1]);
+  printf("\t\t\t\t\t2D_MAX_HEIGHT\t %lu\n", szMaxDims[1]);
   clGetDeviceInfo(device, CL_DEVICE_IMAGE3D_MAX_WIDTH, sizeof(size_t), &szMaxDims[2], NULL);
-  printf("\t\t\t\t\t3D_MAX_WIDTH\t %u\n", szMaxDims[2]);
+  printf("\t\t\t\t\t3D_MAX_WIDTH\t %lu\n", szMaxDims[2]);
   clGetDeviceInfo(device, CL_DEVICE_IMAGE3D_MAX_HEIGHT, sizeof(size_t), &szMaxDims[3], NULL);
-  printf("\t\t\t\t\t3D_MAX_HEIGHT\t %u\n", szMaxDims[3]);
+  printf("\t\t\t\t\t3D_MAX_HEIGHT\t %lu\n", szMaxDims[3]);
   clGetDeviceInfo(device, CL_DEVICE_IMAGE3D_MAX_DEPTH, sizeof(size_t), &szMaxDims[4], NULL);
-  printf("\t\t\t\t\t3D_MAX_DEPTH\t %u\n", szMaxDims[4]);
+  printf("\t\t\t\t\t3D_MAX_DEPTH\t %lu\n", szMaxDims[4]);
 
   // CL_DEVICE_PREFERRED_VECTOR_WIDTH_<type>
   printf("  CL_DEVICE_PREFERRED_VECTOR_WIDTH_<t>\t");
@@ -191,70 +191,78 @@ int main(int argc, const char** argv) {
 	    sProfileString += cBuffer;
 	  } else {
 	    printf(" Error %i in clGetPlatformInfo Call !!!\n\n", ciErrNum);
-    bPassed = false;
-  }
-  sProfileString += ", Platform Version = ";
+	    bPassed = false;
+	  }
+	  sProfileString += ", Platform Version = ";	 
+	  ciErrNum = clGetPlatformInfo (clSelectedPlatformID, CL_PLATFORM_VERSION, sizeof(cBuffer), cBuffer, NULL);
+	  if (ciErrNum == CL_SUCCESS) {
+	    printf(" CL_PLATFORM_VERSION: \t%s\n", cBuffer);
+	    sProfileString += cBuffer;
+	  } else {
+	    printf(" Error %i in clGetPlatformInfo Call !!!\n\n", ciErrNum);
+	    bPassed = false;
+	  }
+	  
+	  // Log OpenCL SDK Version # (for convenience:  not specific to OpenCL)
+	  sProfileString += ", NumDevs = ";
 
-  ciErrNum = clGetPlatformInfo (clSelectedPlatformID, CL_PLATFORM_VERSION, sizeof(cBuffer), cBuffer, NULL);
-  if (ciErrNum == CL_SUCCESS) {
-    printf(" CL_PLATFORM_VERSION: \t%s\n", cBuffer);
-    sProfileString += cBuffer;
-  } else {
-    printf(" Error %i in clGetPlatformInfo Call !!!\n\n", ciErrNum);
-    bPassed = false;
-  }
-
-  // Log OpenCL SDK Version # (for convenience:  not specific to OpenCL)
-  sProfileString += ", NumDevs = ";
-
-  // Get and log OpenCL device info
-  cl_uint ciDeviceCount;
-  cl_device_id *devices;
-  printf("OpenCL Device Info:\n\n");
-  ciErrNum = clGetDeviceIDs (clSelectedPlatformID, CL_DEVICE_TYPE_ALL, 0, NULL, &ciDeviceCount);
-
-  // check for 0 devices found or errors...
-  if (ciDeviceCount == 0) {
-    printf(" No devices found supporting OpenCL (return code %i)\n\n", ciErrNum);
-    bPassed = false;
-    sProfileString += "0";
-  } else if (ciErrNum != CL_SUCCESS) {
-    printf(" Error %i in clGetDeviceIDs call !!!\n\n", ciErrNum);
-    bPassed = false;
-  } else {
-    // Get and log the OpenCL device ID's
-    ciErrNum = clGetPlatformInfo (clSelectedPlatformID, CL_PLATFORM_NAME, sizeof(cBuffer), cBuffer, NULL);
-    printf(" %u devices found supporting OpenCL on: %s\n\n", ciDeviceCount, cBuffer);
-    char cTemp[2];
-    sprintf(cTemp, "%u", ciDeviceCount);
-    sProfileString += cTemp;
-    if ((devices = (cl_device_id*)malloc(sizeof(cl_device_id) * ciDeviceCount)) == NULL) {
-      printf(" Failed to allocate memory for devices !!!\n\n");
-      bPassed = false;
-    }
-    ciErrNum = clGetDeviceIDs (clSelectedPlatformID, CL_DEVICE_TYPE_ALL, ciDeviceCount, devices, &ciDeviceCount);
-    if (ciErrNum == CL_SUCCESS) {
-      for(unsigned int i = 0; i < ciDeviceCount; ++i )  {
-        printf(" ----------------------------------\n");
-clGetDeviceInfo(devices[i], CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL);
-printf(" Device %s\n", cBuffer);
-printf(" ---------------------------------\n");
-clPrintDevInfo(devices[i]);
-sProfileString += ", Device = ";
-sProfileString += cBuffer;
+	  // Get and log OpenCL device info
+	  cl_uint ciDeviceCount;
+	  cl_device_id *devices;
+	  printf("OpenCL Device Info:\n\n");
+	  ciErrNum = clGetDeviceIDs (clSelectedPlatformID, CL_DEVICE_TYPE_ALL, 0, NULL, &ciDeviceCount);
+	  
+	  // check for 0 devices found or errors...
+	  if (ciDeviceCount == 0) {
+	    printf(" No devices found supporting OpenCL (return code %i)\n\n", ciErrNum);
+	    bPassed = false;
+	    sProfileString += "0";
+	  } else if (ciErrNum == CL_DEVICE_NOT_FOUND) {
+	    printf(" Device not found !!!\n\n");
+	    bPassed = false;
+	  } else if (ciErrNum != CL_SUCCESS) {
+	    printf(" Error %i in clGetDeviceIDs call !!!\n\n", ciErrNum);
+	    bPassed = false;
+	  } else {
+	    // Get and log the OpenCL device ID's
+	    ciErrNum = clGetPlatformInfo (clSelectedPlatformID, CL_PLATFORM_NAME, sizeof(cBuffer), cBuffer, NULL);
+	    printf(" %u devices found supporting OpenCL on: %s\n\n", ciDeviceCount, cBuffer);
+	    char cTemp[2];
+	    sprintf(cTemp, "%u", ciDeviceCount);
+	    sProfileString += cTemp;
+	    if ((devices = (cl_device_id*)malloc(sizeof(cl_device_id) * ciDeviceCount)) == NULL) {
+	      printf(" Failed to allocate memory for devices !!!\n\n");
+	      bPassed = false;
+	    }
+	    ciErrNum = clGetDeviceIDs (clSelectedPlatformID, CL_DEVICE_TYPE_ALL, ciDeviceCount, devices, &ciDeviceCount);
+	    switch(ciErrNum) {
+	    case CL_SUCCESS:
+	      for(unsigned int i = 0; i < ciDeviceCount; ++i )  {
+		printf(" ----------------------------------\n");
+		clGetDeviceInfo(devices[i], CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL);
+		printf(" Device %s\n", cBuffer);
+		printf(" ---------------------------------\n");
+		clPrintDevInfo(devices[i]);
+		sProfileString += ", Device = ";
+		sProfileString += cBuffer;
+	      }
+	      break;
+	    case CL_DEVICE_NOT_FOUND:
+	      printf(" Error, No Devices found!\n\n");
+	      bPassed = false;	      
+	      break;
+	    default:
+	      printf(" Error %i in clGetDeviceIDs call !!!\n\n", ciErrNum);
+	      bPassed = false;
+	      break;
+	    }
+	  }	  
+	  // masterlog info
+	  sProfileString += "\n";
+	  printf("%s", sProfileString.c_str());
+	}
       }
-            } else {
-      printf(" Error %i in clGetDeviceIDs call !!!\n\n", ciErrNum);
-      bPassed = false;
-    }
-  }
-
-  // masterlog info
-  sProfileString += "\n";
-  printf("%s", sProfileString.c_str());
-}
-free(clPlatformIDs);
-      }
+      free(clPlatformIDs);
     }
   }
 
